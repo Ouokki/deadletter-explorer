@@ -5,7 +5,7 @@ export async function getTopics(): Promise<string[]> {
 }
 
 export type MessageDto = {
-  topic: string;
+  topic?: string;
   partition: number;
   offset: number;
   timestamp: number;
@@ -21,9 +21,17 @@ export async function getMessages(topic: string, limit = 200): Promise<MessageDt
   return r.json();
 }
 
-export async function replay(targetTopic: string, items: {partition:number, offset:number, valueBase64?:string|null, headersBase64?:Record<string,string>}[], throttlePerSec?: number) {
-  const body = {
-    sourceTopic: items[0]?.['topic'], // optional
+type ReplayItemDto = {
+  partition: number;
+  offset: number;
+  valueBase64?: string | null;
+  headersBase64?: Record<string, string>;
+  topic?: string; // ← allow topic when caller provides it
+};
+
+export async function replay(targetTopic: string, items: ReplayItemDto[], throttlePerSec?: number
+) {const body = {
+    sourceTopic: items[0]?.topic, // optional
     targetTopic,
     items,
     throttlePerSec

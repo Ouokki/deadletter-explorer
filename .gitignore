@@ -1,0 +1,17 @@
+# Java / Maven
+target/
+*.iml
+.idea/
+*.log
+.mvn/wrapper/maven-wrapper.jar
+.mvn/wrapper/maven-wrapper.properties
+# Node
+node_modules/
+dist/
+*.tsbuildinfo
+# OS
+.DS_Store
+Thumbs.db
+# Env
+.env
+.env.local

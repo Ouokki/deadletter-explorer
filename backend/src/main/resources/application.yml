@@ -1,0 +1,27 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: deadletter-explorer
+  kafka:
+    bootstrap-servers: ${KAFKA_BROKERS:localhost:29092}
+    consumer:
+      client-id: dle-consumer
+      group-id: dle-reader
+      key-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
+      enable-auto-commit: false
+      properties:
+        isolation.level: read_committed
+    properties:
+      allow.auto.create.topics: true
+
+dle:
+  dlqPattern: ".*-DLQ$"
+  fetchDefault: 200
+  replay:
+    throttlePerSec: 50
+    headerAllowList: ["content-type", "correlation-id"]
+  cors:
+    allowedOrigins: "http://localhost:5173"

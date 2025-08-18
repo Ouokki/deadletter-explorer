@@ -14,22 +14,25 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-# Shared env for all jobs
 env:
   SONAR_HOST_URL: https://sonarcloud.io
-  SONAR_ORG: ${{ vars.SONAR_ORG }}
 
 jobs:
   backend:
     name: Backend - build & SonarCloud
     runs-on: ubuntu-latest
-    env:
-      SONAR_PROJECT_KEY: ${{ vars.SONAR_BACKEND_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Validate Sonar variables (backend)
+        run: |
+          [ -n "${{ vars.SONAR_ORG }}" ] || { echo "Missing Actions Variable: SONAR_ORG"; exit 1; }
+          [ -n "${{ vars.SONAR_BACKEND_KEY }}" ] || { echo "Missing Actions Variable: SONAR_BACKEND_KEY"; exit 1; }
+          echo "ORG=${{ vars.SONAR_ORG }}"
+          echo "PROJECT_KEY=${{ vars.SONAR_BACKEND_KEY }}"
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -64,20 +67,25 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-            -Dsonar.host.url=$SONAR_HOST_URL \
-            -Dsonar.organization=$SONAR_ORG \
-            -Dsonar.projectKey=$SONAR_PROJECT_KEY
+            -Dsonar.host.url=${{ env.SONAR_HOST_URL }} \
+            -Dsonar.organization=${{ vars.SONAR_ORG }} \
+            -Dsonar.projectKey=${{ vars.SONAR_BACKEND_KEY }}
 
   frontend:
     name: Frontend - build & SonarCloud
     runs-on: ubuntu-latest
-    env:
-      SONAR_PROJECT_KEY: ${{ vars.SONAR_FRONTEND_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Validate Sonar variables (frontend)
+        run: |
+          [ -n "${{ vars.SONAR_ORG }}" ] || { echo "Missing Actions Variable: SONAR_ORG"; exit 1; }
+          [ -n "${{ vars.SONAR_FRONTEND_KEY }}" ] || { echo "Missing Actions Variable: SONAR_FRONTEND_KEY"; exit 1; }
+          echo "ORG=${{ vars.SONAR_ORG }}"
+          echo "PROJECT_KEY=${{ vars.SONAR_FRONTEND_KEY }}"
 
       - name: Use Node.js
         uses: actions/setup-node@v4
@@ -94,24 +102,33 @@ jobs:
         working-directory: frontend
         run: npm run build
 
+      # Optional: run tests to produce coverage/lcov.info
       # - name: Test with coverage
       #   working-directory: frontend
       #   run: npm test -- --coverage
+
+      # Generate a fresh sonar-project.properties so keys can’t be empty
+      - name: Generate Sonar config (frontend)
+        working-directory: frontend
+        run: |
+          printf "%s\n" \
+            "sonar.host.url=${{ env.SONAR_HOST_URL }}" \
+            "sonar.organization=${{ vars.SONAR_ORG }}" \
+            "sonar.projectKey=${{ vars.SONAR_FRONTEND_KEY }}" \
+            "sonar.sources=src" \
+            "sonar.tests=src" \
+            "sonar.test.inclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx,**/*.test.js,**/*.spec.js,**/*.test.jsx,**/*.spec.jsx" \
+            "sonar.exclusions=**/node_modules/**,**/dist/**,**/build/**,**/coverage/**" \
+            "sonar.javascript.lcov.reportPaths=coverage/lcov.info" \
+            > sonar-project.properties
+          echo "Generated frontend/sonar-project.properties:"
+          cat sonar-project.properties
 
       - name: SonarCloud analyze
         if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
         uses: SonarSource/sonarcloud-github-action@v2
         with:
           projectBaseDir: frontend
-          args: |
-            -Dsonar.host.url=${{ env.SONAR_HOST_URL }}
-            -Dsonar.organization=${{ env.SONAR_ORG }}
-            -Dsonar.projectKey=${{ env.SONAR_PROJECT_KEY }}
-            -Dsonar.sources=src
-            -Dsonar.tests=src
-            -Dsonar.test.inclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx,**/*.test.js,**/*.spec.js,**/*.test.jsx,**/*.spec.jsx
-            -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**,**/coverage/**
-            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

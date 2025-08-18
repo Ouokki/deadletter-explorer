@@ -18,6 +18,9 @@
   <properties>
     <java.version>21</java.version>
     <maven.compiler.release>21</maven.compiler.release>
+    <sonar.organization>ouokki</sonar.organization>
+    <sonar.projectKey>Ouokki_deadletter-explorer</sonar.projectKey>
+    <sonar.host.url>https://sonarcloud.io</sonar.host.url>
   </properties>
 
   <dependencies>

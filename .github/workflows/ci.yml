@@ -2,7 +2,10 @@ name: CI
 
 on:
   push:
+    branches:
+      - main
   pull_request:
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
@@ -14,13 +17,14 @@ concurrency:
 
 jobs:
   backend:
+    name: Backend — build & SonarCloud
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Set up JDK
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -50,12 +54,14 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-            -Dsonar.projectKey=Ouokki_deadletter-explorer \
-            -Dsonar.host.url=https://sonarcloud.io
+          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
 
   frontend:
+    name: Frontend — build & SonarCloud
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -76,27 +82,15 @@ jobs:
         working-directory: frontend
         run: npm run build
 
-      - name: Set up JDK for Sonar
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Cache Sonar packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
+      # Optional: generate coverage for PR quality gates
+      # - name: Test with coverage
+      #   working-directory: frontend
+      #   run: npm test -- --coverage
 
       - name: SonarCloud analyze (frontend)
         uses: SonarSource/sonarcloud-github-action@v2
         with:
           projectBaseDir: frontend
-          args: >
-            -Dsonar.projectKey=Ouokki_deadletter-explorer-frontend
-            -Dsonar.organization=ouokki
-            -Dsonar.host.url=https://sonarcloud.io
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

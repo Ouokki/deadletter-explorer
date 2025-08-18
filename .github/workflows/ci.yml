@@ -1,9 +1,8 @@
-name: CI
+name: CI - Build & SonarCloud
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
     types: [opened, synchronize, reopened]
 
@@ -15,12 +14,20 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Shared env for all jobs
+env:
+  SONAR_HOST_URL: https://sonarcloud.io
+  SONAR_ORG: ${{ vars.SONAR_ORG }}
+
 jobs:
   backend:
-    name: Backend — build & SonarCloud
+    name: Backend - build & SonarCloud
     runs-on: ubuntu-latest
+    env:
+      SONAR_PROJECT_KEY: ${{ vars.SONAR_BACKEND_KEY }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -44,35 +51,40 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
-      - name: Build backend
+      - name: Build (external PRs - skip Sonar)
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
         working-directory: backend
-        run: mvn -q -DskipTests package
+        run: mvn -B -q -DskipTests package
 
-      - name: SonarCloud analyze (backend)
+      - name: Build + SonarCloud
+        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
         working-directory: backend
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+            -Dsonar.host.url=$SONAR_HOST_URL \
+            -Dsonar.organization=$SONAR_ORG \
+            -Dsonar.projectKey=$SONAR_PROJECT_KEY
 
   frontend:
-    name: Frontend — build & SonarCloud
+    name: Frontend - build & SonarCloud
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: read
+    env:
+      SONAR_PROJECT_KEY: ${{ vars.SONAR_FRONTEND_KEY }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Use Node.js 22
+      - name: Use Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22.12.0'
           cache: 'npm'
-          cache-dependency-path: 'frontend/package-lock.json'
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Install deps
         working-directory: frontend
@@ -82,15 +94,29 @@ jobs:
         working-directory: frontend
         run: npm run build
 
-      # Optional: generate coverage for PR quality gates
       # - name: Test with coverage
       #   working-directory: frontend
       #   run: npm test -- --coverage
 
-      - name: SonarCloud analyze (frontend)
+      - name: SonarCloud analyze
+        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
         uses: SonarSource/sonarcloud-github-action@v2
         with:
           projectBaseDir: frontend
+          args: |
+            -Dsonar.host.url=${{ env.SONAR_HOST_URL }}
+            -Dsonar.organization=${{ env.SONAR_ORG }}
+            -Dsonar.projectKey=${{ env.SONAR_PROJECT_KEY }}
+            -Dsonar.sources=src
+            -Dsonar.tests=src
+            -Dsonar.test.inclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx,**/*.test.js,**/*.spec.js,**/*.test.jsx,**/*.spec.jsx
+            -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**,**/coverage/**
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: External PR - skip SonarCloud
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
+        run: |
+          echo "External PR - skipping SonarCloud (no secrets on forks)"

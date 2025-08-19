@@ -16,10 +16,12 @@ concurrency:
 
 env:
   SONAR_HOST_URL: https://sonarcloud.io
+  # Testcontainers defaults are fine on GitHub runners; leave Ryuk enabled.
+  TESTCONTAINERS_RYUK_DISABLED: 'false'
 
 jobs:
   backend:
-    name: Backend - build & SonarCloud
+    name: Backend - build & SonarCloud (with Testcontainers)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -54,7 +56,17 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
-      # For external PRs (from forks), run tests but skip Sonar (no secrets).
+      - name: Docker info (for Testcontainers)
+        run: |
+          docker --version
+          docker info
+
+      # Pre-pull images your tests use (works without login)
+      - name: Pre-pull test images
+        run: |
+          set -e
+          docker pull confluentinc/cp-kafka:7.6.1 || docker pull confluentinc/cp-kafka:7.5.3
+
       - name: Build & Test (external PRs - no Sonar)
         if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
         working-directory: backend
@@ -62,7 +74,6 @@ jobs:
           mvn -B clean verify
           test -f target/site/jacoco/jacoco.xml && echo "JaCoCo report present ✅" || { echo "Missing JaCoCo report ❌"; exit 1; }
 
-      # For push + internal PRs, run Sonar with coverage
       - name: Build + SonarCloud (internal)
         if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
         working-directory: backend

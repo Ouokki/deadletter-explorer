@@ -54,22 +54,28 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
-      - name: Build (external PRs - skip Sonar)
+      # For external PRs (from forks), run tests but skip Sonar (no secrets).
+      - name: Build & Test (external PRs - no Sonar)
         if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
         working-directory: backend
-        run: mvn -B -q -DskipTests package
+        run: |
+          mvn -B clean verify
+          test -f target/site/jacoco/jacoco.xml && echo "JaCoCo report present ✅" || { echo "Missing JaCoCo report ❌"; exit 1; }
 
-      - name: Build + SonarCloud
+      # For push + internal PRs, run Sonar with coverage
+      - name: Build + SonarCloud (internal)
         if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
         working-directory: backend
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+          mvn -B clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
             -Dsonar.host.url=${{ env.SONAR_HOST_URL }} \
             -Dsonar.organization=${{ vars.SONAR_ORG }} \
-            -Dsonar.projectKey=${{ vars.SONAR_BACKEND_KEY }}
+            -Dsonar.projectKey=${{ vars.SONAR_BACKEND_KEY }} \
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+          test -f target/site/jacoco/jacoco.xml && echo "JaCoCo report present ✅" || { echo "Missing JaCoCo report ❌"; exit 1; }
 
   frontend:
     name: Frontend - build & SonarCloud
@@ -102,12 +108,11 @@ jobs:
         working-directory: frontend
         run: npm run build
 
-      # Optional: run tests to produce coverage/lcov.info
+      # Optional: uncomment to publish JS/TS coverage
       # - name: Test with coverage
       #   working-directory: frontend
       #   run: npm test -- --coverage
 
-      # Generate a fresh sonar-project.properties so keys can’t be empty
       - name: Generate Sonar config (frontend)
         working-directory: frontend
         run: |
@@ -135,5 +140,4 @@ jobs:
 
       - name: External PR - skip SonarCloud
         if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
-        run: |
-          echo "External PR - skipping SonarCloud (no secrets on forks)"
+        run: echo "External PR - skipping SonarCloud (no secrets on forks)"

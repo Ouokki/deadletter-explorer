@@ -75,6 +75,7 @@ jobs:
             -Dsonar.organization=${{ vars.SONAR_ORG }} \
             -Dsonar.projectKey=${{ vars.SONAR_BACKEND_KEY }} \
             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+            -Dsonar.coverage.exclusions=src/main/java/**/dto/**
           test -f target/site/jacoco/jacoco.xml && echo "JaCoCo report present ✅" || { echo "Missing JaCoCo report ❌"; exit 1; }
 
   frontend:

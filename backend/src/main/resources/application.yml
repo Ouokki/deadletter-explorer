@@ -17,6 +17,13 @@ spring:
     properties:
       allow.auto.create.topics: true
 
+logging:
+  level:
+    root: ERROR
+    com.dle.dlq: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} {corr=%X{correlationId} topic=%X{kafka.topic} p=%X{kafka.partition} off=%X{kafka.offset}} - %msg%n"
+
 dle:
   dlqPattern: ".*-DLQ$"
   fetchDefault: 200

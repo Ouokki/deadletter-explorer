@@ -8,23 +8,31 @@ import org.springframework.web.cors.reactive.CorsWebFilter;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
+import java.util.List;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Configuration
 public class CorsConfig {
 
-  @Bean
-  public CorsWebFilter corsWebFilter(
-      @Value("${dle.cors.allowedOrigins:http://localhost:5173}") String allowedOrigins) {
+    @Bean
+    public CorsWebFilter corsWebFilter(
+            @Value("${dle.cors.allowedOrigins:http://localhost:5173}") String allowedOrigins) {
 
-    CorsConfiguration config = new CorsConfiguration();
-    config.setAllowCredentials(true);
-    config.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
-    config.addAllowedHeader("*");
-    config.addAllowedMethod("*");
+        List<String> origins = Arrays.asList(allowedOrigins.split(","));
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowCredentials(true);
+        config.setAllowedOrigins(origins);
+        config.addAllowedHeader("*");
+        config.addAllowedMethod("*");
 
-    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/**", config);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
 
-    return new CorsWebFilter(source);
-  }
+        log.info("CORS configuration initialized: allowedOrigins={}, allowCredentials={}, allowedHeaders=*, allowedMethods=*",
+                origins, config.getAllowCredentials());
+
+        return new CorsWebFilter(source);
+    }
 }

@@ -26,7 +26,6 @@ class CorsConfigWebTest {
 
     @BeforeEach
     void setUp() {
-        // Bind to the real Netty server so requests have a proper URI scheme/host.
         this.client = WebTestClient
                 .bindToServer()
                 .baseUrl("http://localhost:" + port)

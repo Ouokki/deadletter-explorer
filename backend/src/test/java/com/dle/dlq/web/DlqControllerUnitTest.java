@@ -3,6 +3,7 @@ package com.dle.dlq.web;
 import com.dle.dlq.admin.DlqAdminService;
 import com.dle.dlq.consumer.DlqConsumerService;
 import com.dle.dlq.dto.MessageDto;
+import com.dle.dlq.dto.ReplayItem;
 import com.dle.dlq.dto.ReplayRequest;
 import com.dle.dlq.producer.DlqProducerService;
 import org.junit.jupiter.api.Test;
@@ -84,6 +85,27 @@ class DlqControllerUnitTest {
         int count = controller.replay(req);
 
         assertThat(count).isEqualTo(3);
+        verify(producer).replay(req);
+        verifyNoInteractions(admin, consumer);
+    }
+
+    @Test
+    void replay_withNonNullItems_logsSizeAndDelegates() throws Exception {
+        DlqAdminService admin = mock(DlqAdminService.class);
+        DlqConsumerService consumer = mock(DlqConsumerService.class);
+        DlqProducerService producer = mock(DlqProducerService.class);
+
+        ReplayRequest req = mock(ReplayRequest.class);
+        when(req.targetTopic()).thenReturn("targetTopic");
+        when(req.items()).thenReturn(List.of(mock(ReplayItem.class), mock(ReplayItem.class)));
+        when(req.throttlePerSec()).thenReturn(5);
+        when(producer.replay(req)).thenReturn(2);
+
+        DlqController controller = new DlqController(admin, consumer, producer);
+
+        int count = controller.replay(req);
+
+        assertThat(count).isEqualTo(2);
         verify(producer).replay(req);
         verifyNoInteractions(admin, consumer);
     }

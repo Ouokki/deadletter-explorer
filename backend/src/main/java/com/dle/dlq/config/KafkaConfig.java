@@ -19,7 +19,9 @@ import org.springframework.kafka.core.ProducerFactory;
 import com.dle.dlq.kafka.MdcRecordInterceptor;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Configuration
 @RequiredArgsConstructor
 public class KafkaConfig {
@@ -35,6 +37,10 @@ public class KafkaConfig {
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         props.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed");
+
+        log.info("Kafka ConsumerFactory initialized with bootstrapServers='{}', enableAutoCommit={}, isolationLevel={}",
+                bootstrap, props.get(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG), props.get(ConsumerConfig.ISOLATION_LEVEL_CONFIG));
+
         return new DefaultKafkaConsumerFactory<>(props);
     }
 
@@ -44,11 +50,15 @@ public class KafkaConfig {
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
+
+        log.info("Kafka ProducerFactory initialized with bootstrapServers='{}'", bootstrap);
+
         return new DefaultKafkaProducerFactory<>(props);
     }
 
     @Bean
     public KafkaTemplate<byte[], byte[]> kafkaTemplate(ProducerFactory<byte[], byte[]> pf) {
+        log.debug("KafkaTemplate bean created");
         return new KafkaTemplate<>(pf);
     }
 
@@ -58,6 +68,9 @@ public class KafkaConfig {
         var f = new ConcurrentKafkaListenerContainerFactory<byte[], byte[]>();
         f.setConsumerFactory(cf);
         f.setRecordInterceptor(interceptor);
+
+        log.info("KafkaListenerContainerFactory initialized with MDC interceptor");
+
         return f;
     }
 

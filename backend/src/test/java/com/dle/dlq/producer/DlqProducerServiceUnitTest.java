@@ -328,4 +328,49 @@ class DlqProducerServiceUnitTest {
 
         verifyNoInteractions(template);
     }
+
+    @Test
+    void replay_propagatesInterrupt_duringSendGet() throws Exception {
+        @SuppressWarnings("unchecked")
+        KafkaTemplate<byte[], byte[]> template = mock(KafkaTemplate.class);
+
+        CompletableFuture<Object> never = new CompletableFuture<>();
+        when(template.send(any(Message.class))).thenReturn((CompletableFuture) never);
+
+        String b64 = Base64.getEncoder().encodeToString("x".getBytes(StandardCharsets.UTF_8));
+        ReplayItem item = mock(ReplayItem.class);
+        when(item.valueBase64()).thenReturn(b64);
+        when(item.headersBase64()).thenReturn(Map.of());
+
+        ReplayRequest req = mock(ReplayRequest.class);
+        when(req.targetTopic()).thenReturn("t");
+        when(req.throttlePerSec()).thenReturn(10_000); // irrelevant; we interrupt before sleep
+        when(req.items()).thenReturn(List.of(item));
+
+        try (MockedStatic<MessageMapper> mm = mockStatic(MessageMapper.class)) {
+            mm.when(() -> MessageMapper.filterAllowed(any(), anySet())).thenReturn(Map.of());
+
+            DlqProducerService svc = new DlqProducerService("content-type,correlation-id", template);
+
+            var thrown = new AtomicReference<Throwable>();
+            Thread worker = new Thread(() -> {
+                try {
+                    svc.replay(req); // will block on send(...).get()
+                    thrown.set(new AssertionError("Expected InterruptedException to propagate"));
+                } catch (Throwable t) {
+                    thrown.set(t);
+                }
+            });
+
+            worker.start();
+
+            Thread.sleep(100);
+            worker.interrupt();
+            worker.join(2_000);
+
+            assertThat(thrown.get()).isInstanceOf(InterruptedException.class);
+            verify(template, times(1)).send(any(Message.class));
+        }
+    }
+
 }

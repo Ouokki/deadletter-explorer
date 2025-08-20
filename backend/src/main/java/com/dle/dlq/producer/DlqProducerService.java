@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -48,11 +49,11 @@ public class DlqProducerService {
      * Replays the provided items to targetTopic with throttling and header allow-list.
      * Returns the number of successfully sent records (blocking send).
      */
-    public int replay(ReplayRequest req) throws Exception {
+    public int replay(ReplayRequest req) throws Exception { // keep checked throws, or narrow to InterruptedException
         Objects.requireNonNull(req.targetTopic(), "targetTopic required");
 
         final int requestedTps = Optional.ofNullable(req.throttlePerSec()).orElse(throttlePerSec);
-        final int effectiveTps = Math.max(1, Math.min(10_000, requestedTps)); // safety clamp
+        final int effectiveTps = Math.max(1, Math.min(10_000, requestedTps));
         final long intervalMs = Math.max(1, 1000L / effectiveTps);
 
         if (req.items() == null || req.items().isEmpty()) {
@@ -88,25 +89,30 @@ public class DlqProducerService {
                         .copyHeaders(filtered)
                         .build();
 
-                if (log.isDebugEnabled()) {
-                    log.debug("Sending to topic='{}' (offset={}, partition={}, headers={}): payloadSizeBytes={}",
-                            req.targetTopic(), it.offset(), it.partition(), filtered.keySet(), value == null ? 0 : value.length);
-                }
-
                 try {
+                    // This can throw InterruptedException or ExecutionException
                     template.send(msg).get();
                     sent++;
-                } catch (Exception sendEx) {
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt(); // restore flag
+                    log.warn("Replay interrupted during send; sentSoFar={}", sent, ie);
+                    throw ie; // propagate (preferred)
+                } catch (ExecutionException ee) {
+                    // Sending failed but we keep going with the next item
                     log.error("Failed to send item to topic='{}' (offset={}, partition={})",
-                            req.targetTopic(), it.offset(), it.partition(), sendEx);
+                            req.targetTopic(), it.offset(), it.partition(), ee.getCause() != null ? ee.getCause() : ee);
+                } catch (RuntimeException re) {
+                    // Synchronous Kafka client/runtime error
+                    log.error("Failed to send item to topic='{}' (offset={}, partition={})",
+                            req.targetTopic(), it.offset(), it.partition(), re);
                 }
 
                 try {
                     Thread.sleep(intervalMs);
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
-                    log.warn("Replay interrupted while throttling; sentSoFar={}", sent);
-                    throw new IllegalStateException("Replay interrupted", ie);
+                    log.warn("Replay interrupted while throttling; sentSoFar={}", sent, ie);
+                    throw ie; // propagate (preferred)
                 }
             }
         } finally {

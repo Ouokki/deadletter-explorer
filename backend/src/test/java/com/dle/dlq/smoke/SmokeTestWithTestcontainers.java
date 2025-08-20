@@ -1,4 +1,4 @@
-package com.dle.dlq;
+package com.dle.dlq.smoke;
 
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -64,8 +64,7 @@ class SmokeTestWithTestcontainers {
         try (var admin = AdminClient.create(Map.of("bootstrap.servers", KAFKA.getBootstrapServers()))) {
             admin.createTopics(List.of(
                     new NewTopic(DLQ_TOPIC, 1, (short) 1),
-                    new NewTopic(REGULAR_TOPIC, 1, (short) 1)
-            )).all().get();
+                    new NewTopic(REGULAR_TOPIC, 1, (short) 1))).all().get();
         }
 
         var props = new Properties();
@@ -78,8 +77,7 @@ class SmokeTestWithTestcontainers {
                 var rec = new ProducerRecord<byte[], byte[]>(
                         DLQ_TOPIC,
                         null,
-                        ("v-" + i).getBytes(StandardCharsets.UTF_8)
-                );
+                        ("v-" + i).getBytes(StandardCharsets.UTF_8));
                 rec.headers().add(new RecordHeader("X-Correlation-Id", ("cid-" + i).getBytes(StandardCharsets.UTF_8)));
                 producer.send(rec).get();
             }
@@ -93,7 +91,8 @@ class SmokeTestWithTestcontainers {
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isOk()
-                .expectBody(new ParameterizedTypeReference<List<String>>() {})
+                .expectBody(new ParameterizedTypeReference<List<String>>() {
+                })
                 .returnResult()
                 .getResponseBody();
 

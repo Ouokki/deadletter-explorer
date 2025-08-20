@@ -4,12 +4,15 @@ import com.dle.dlq.dto.MessageDto;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.internals.RecordHeader;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -85,4 +88,22 @@ class MessageMapperUnitTest {
         Map<String, String> base64 = Map.of("x", Base64.getEncoder().encodeToString("y".getBytes(StandardCharsets.UTF_8)));
         assertThat(MessageMapper.filterAllowed(base64, Set.of("a", "b"))).isEmpty();
     }
+
+    @Test
+    void toDto_withMidRangeControlChars_validWhenAtMostTwo() {
+        byte[] k = new byte[] { 'A', 0x10, 'B' };
+        byte[] v = new byte[] { 'X', 0x10, 'Y' };
+
+        ConsumerRecord<byte[], byte[]> rec = new ConsumerRecord<>("t", 0, 1L, k, v);
+
+        MessageDto dto = MessageMapper.toDto(rec);
+
+        assertThat(dto.keyUtf8()).isNotNull();
+        assertThat(dto.valueUtf8()).isNotNull();
+
+        assertThat(dto.keyUtf8().charAt(1)).isEqualTo((char) 0x10);
+        assertThat(dto.valueUtf8().charAt(1)).isEqualTo((char) 0x10);
+    }
+
+
 }

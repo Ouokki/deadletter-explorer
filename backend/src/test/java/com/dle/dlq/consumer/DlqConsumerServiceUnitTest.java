@@ -17,8 +17,13 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import org.slf4j.LoggerFactory;
 
 class DlqConsumerServiceUnitTest {
 
@@ -194,6 +199,76 @@ class DlqConsumerServiceUnitTest {
             assertThat(out.get(0).offset()).isEqualTo(seekFrom + n - 1);
 
             verify(consumer).close();
+        }
+    }
+
+    @Test
+    void fetchLastN_throwsOnNullOrBlankTopic() {
+        @SuppressWarnings("unchecked")
+        ConsumerFactory<byte[], byte[]> cf = mock(ConsumerFactory.class);
+
+        DlqConsumerService svc = new DlqConsumerService(cf);
+
+        assertThatThrownBy(() -> svc.fetchLastN(null, 1))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> svc.fetchLastN("   ", 1))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        verifyNoInteractions(cf);
+    }
+
+    @Test
+    void fetchLastN_returnsEmpty_whenNoPartitions() {
+        @SuppressWarnings("unchecked")
+        ConsumerFactory<byte[], byte[]> cf = mock(ConsumerFactory.class);
+        @SuppressWarnings("unchecked")
+        Consumer<byte[], byte[]> consumer = mock(Consumer.class);
+
+        when(cf.createConsumer(anyString(), isNull())).thenReturn(consumer);
+        when(consumer.partitionsFor("t")).thenReturn(Collections.emptyList());
+
+        DlqConsumerService svc = new DlqConsumerService(cf);
+        assertThat(svc.fetchLastN("t", 5)).isEmpty();
+
+        verify(consumer).close();
+        verify(consumer, never()).poll(any());
+    }
+
+    @Test
+    void fetchLastN_requestedZero_usesFetchDefaultZero_exitsImmediately_andLogsSeekDebug() {
+        String topic = "t";
+
+        @SuppressWarnings("unchecked")
+        ConsumerFactory<byte[], byte[]> cf = mock(ConsumerFactory.class);
+        @SuppressWarnings("unchecked")
+        Consumer<byte[], byte[]> consumer = mock(Consumer.class);
+
+        when(cf.createConsumer(anyString(), isNull())).thenReturn(consumer);
+        List<PartitionInfo> pis = List.of(
+                new PartitionInfo(topic, 0, null, new org.apache.kafka.common.Node[0], new org.apache.kafka.common.Node[0])
+        );
+        when(consumer.partitionsFor(topic)).thenReturn(pis);
+
+        TopicPartition tp0 = new TopicPartition(topic, 0);
+        when(consumer.beginningOffsets(anyCollection())).thenReturn(Map.of(tp0, 10L));
+        when(consumer.endOffsets(anyCollection())).thenReturn(Map.of(tp0, 25L));
+
+        Logger logger = (Logger) LoggerFactory.getLogger(DlqConsumerService.class);
+        Level old = logger.getLevel();
+        try {
+            logger.setLevel(Level.DEBUG);
+
+            DlqConsumerService svc = new DlqConsumerService(cf);
+            svc.fetchDefault = 0;
+
+            List<MessageDto> out = svc.fetchLastN(topic, 0);
+
+            assertThat(out).isEmpty();
+
+            verify(consumer).seek(eq(tp0), eq(25L));
+            verify(consumer, never()).poll(any());
+        } finally {
+            logger.setLevel(old);
         }
     }
 

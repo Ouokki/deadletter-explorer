@@ -106,7 +106,7 @@ public class DlqProducerService {
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                     log.warn("Replay interrupted while throttling; sentSoFar={}", sent);
-                    break;
+                    throw new IllegalStateException("Replay interrupted", ie);
                 }
             }
         } finally {

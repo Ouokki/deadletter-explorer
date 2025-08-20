@@ -16,6 +16,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -244,10 +247,15 @@ class DlqProducerServiceUnitTest {
     }
 
     @Test
-    void replay_breaksWhenInterruptedDuringSleep_afterSendingFirst() throws Exception {
+    void replay_propagatesInterrupt_afterFirstSend() throws Exception {
         @SuppressWarnings("unchecked")
         KafkaTemplate<byte[], byte[]> template = mock(KafkaTemplate.class);
-        when(template.send(any(Message.class))).thenReturn(CompletableFuture.completedFuture(null));
+
+        CountDownLatch firstSend = new CountDownLatch(1);
+        when(template.send(any(Message.class))).thenAnswer(inv -> {
+            firstSend.countDown();
+            return CompletableFuture.completedFuture(null);
+        });
 
         String b64 = Base64.getEncoder().encodeToString("x".getBytes(StandardCharsets.UTF_8));
         ReplayItem it1 = mock(ReplayItem.class);
@@ -259,23 +267,40 @@ class DlqProducerServiceUnitTest {
 
         ReplayRequest req = mock(ReplayRequest.class);
         when(req.targetTopic()).thenReturn("t");
-        when(req.throttlePerSec()).thenReturn(10_000);
+        when(req.throttlePerSec()).thenReturn(1); // intervalMs ~= 1000ms
         when(req.items()).thenReturn(List.of(it1, it2));
 
         try (MockedStatic<MessageMapper> mm = mockStatic(MessageMapper.class)) {
             mm.when(() -> MessageMapper.filterAllowed(any(), anySet())).thenReturn(Map.of());
 
-            Thread.currentThread().interrupt();
-
             DlqProducerService svc = new DlqProducerService("content-type,correlation-id", template);
-            int sent = svc.replay(req);
 
-            assertThat(sent).isEqualTo(1);
+            // Run replay on a worker thread so we can interrupt during sleep
+            var error = new AtomicReference<Throwable>();
+            Thread worker = new Thread(() -> {
+                try {
+                    svc.replay(req);
+                    error.set(new AssertionError("Expected interrupt to propagate"));
+                } catch (Throwable t) {
+                    error.set(t);
+                }
+            });
+
+            worker.start();
+
+            // After first send, interrupt during sleep
+            assertThat(firstSend.await(2, TimeUnit.SECONDS)).isTrue();
+            worker.interrupt();
+            worker.join(2_000);
+
+            // Accept either InterruptedException (best) or your chosen wrapper
+            assertThat(error.get())
+                    .isInstanceOfAny(InterruptedException.class, IllegalStateException.class);
+
             verify(template, times(1)).send(any(Message.class));
-        } finally {
-            Thread.interrupted();
         }
     }
+
 
     @Test
     void replay_withNullPayload_throwsFromMessageBuilder() throws Exception {

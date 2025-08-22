@@ -1,11 +1,29 @@
 services:
+  kc-db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak
+      POSTGRES_DB: keycloak
+    ports: ["5433:5432"]
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0
+    command: start-dev --http-port 8080 --hostname-strict=false
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://kc-db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports: ["8081:8080"]        # http://localhost:8081
+    depends_on: [kc-db]
   zookeeper:
     image: bitnami/zookeeper:3.9
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
     ports:
       - "2181:2181"
-
   kafka:
     image: bitnami/kafka:3.7
     depends_on:

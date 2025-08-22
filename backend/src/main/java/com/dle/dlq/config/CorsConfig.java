@@ -23,14 +23,15 @@ public class CorsConfig {
         List<String> origins = Arrays.asList(allowedOrigins.split(","));
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
+        config.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
         config.setAllowedOrigins(origins);
         config.addAllowedHeader("*");
-        config.addAllowedMethod("*");
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
 
-        log.info("CORS configuration initialized: allowedOrigins={}, allowCredentials={}, allowedHeaders=*, allowedMethods=*",
+        log.info(
+                "CORS configuration initialized: allowedOrigins={}, allowCredentials={}, allowedHeaders=*, allowedMethods=*",
                 origins, config.getAllowCredentials());
 
         return new CorsWebFilter(source);

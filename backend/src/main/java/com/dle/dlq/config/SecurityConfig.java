@@ -34,24 +34,23 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/dlq/replay").hasAnyRole("triager", "replayer")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth -> oauth
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(keycloakAuthConverter())));
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())));
         return http.build();
     }
 
-    @Bean
-    Converter<Jwt, ? extends AbstractAuthenticationToken> keycloakAuthConverter() {
+    private Converter<Jwt, AbstractAuthenticationToken> jwtAuthenticationConverter() {
         return jwt -> {
             var authorities = new HashSet<GrantedAuthority>();
-            // realm roles (optional)
+
             extractRoles(jwt.getClaimAsMap("realm_access"), "roles")
                     .forEach(r -> authorities.add(new SimpleGrantedAuthority("ROLE_" + r)));
 
-            // client roles under resource_access.dle-api.roles
             var ra = jwt.getClaimAsMap("resource_access");
-            if (ra != null) {
-                var api = (Map<String, Object>) ra.get("dle-api");
-                extractRoles(api, "roles").forEach(r -> authorities.add(new SimpleGrantedAuthority("ROLE_" + r)));
+            if (ra != null && ra.get("dle-api") instanceof Map<?, ?> api) {
+                extractRoles((Map<String, Object>) api, "roles")
+                        .forEach(r -> authorities.add(new SimpleGrantedAuthority("ROLE_" + r)));
             }
+
             return new JwtAuthenticationToken(jwt, authorities);
         };
     }

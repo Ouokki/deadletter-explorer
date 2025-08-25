@@ -1,0 +1,25 @@
+:root { --radius: 8px; --muted: #667085; --border: #e5e7eb; }
+* { box-sizing: border-box; }
+
+.page { font-family: Inter, system-ui, sans-serif; padding: 16px; }
+.header .muted { opacity: .7; }
+
+.bar { display: flex; gap: 16px; align-items: center; margin-top: 8px; }
+.bar .muted { color: var(--muted); }
+.bar input { padding: 6px 8px; border: 1px solid var(--border); border-radius: var(--radius); }
+
+.layout { display: grid; grid-template-columns: 240px 1fr; gap: 16px; margin-top: 16px; }
+.panel { border: 1px solid var(--border); border-radius: var(--radius); padding: 8px; }
+
+.list { list-style: none; padding-left: 0; margin: 8px 0 0; }
+.listItem { background: transparent; border: none; cursor: pointer; padding: 6px 8px; width: 100%; text-align: left; border-radius: 6px; }
+.listItem.active { background: #eef5ff; }
+
+.panelHeader { display: flex; justify-content: space-between; align-items: center; }
+
+.table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+.table th { text-align: left; border-bottom: 1px solid #eee; padding: 6px 4px; }
+.table td { padding: 6px 4px; vertical-align: top; }
+
+.code { opacity: .8; }
+.pre { max-width: 600px; overflow: auto; margin: 0; }

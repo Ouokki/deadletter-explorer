@@ -1,45 +1,43 @@
+version: "3.9"
+
 services:
-  kc-db:
-    image: postgres:16
-    environment:
-      POSTGRES_USER: keycloak
-      POSTGRES_PASSWORD: keycloak
-      POSTGRES_DB: keycloak
-    ports: ["5433:5432"]
   keycloak:
     image: quay.io/keycloak/keycloak:24.0
     command: start-dev --http-port 8080 --hostname-strict=false
     environment:
-      KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://kc-db:5432/keycloak
-      KC_DB_USERNAME: keycloak
-      KC_DB_PASSWORD: keycloak
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
-    ports: ["8081:8080"]        # http://localhost:8081
-    depends_on: [kc-db]
+    ports:
+      - "8081:8080"   
+    volumes:
+      - keycloak_data:/opt/keycloak/data   
+
   zookeeper:
     image: bitnami/zookeeper:3.9
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
     ports:
       - "2181:2181"
+    healthcheck:
+      test: ["CMD-SHELL", "echo ruok | nc 127.0.0.1 2181 | grep imok"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
   kafka:
     image: bitnami/kafka:3.7
     depends_on:
       - zookeeper
     ports:
-      - "9092:9092"   # container -> host (internal)
-      - "29092:29092" # container -> host (external/host access)
+      - "9092:9092"   # internal (container-to-container)
+      - "29092:29092" # external (host access)
     environment:
       - KAFKA_BROKER_ID=1
       - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
-      # Two listeners: one for internal containers, one for host apps
       - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,PLAINTEXT_HOST://:29092
       - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
-      # Helpful single-node defaults
       - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
       - KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR=1
       - KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
@@ -51,3 +49,5 @@ services:
       timeout: 5s
       retries: 20
 
+volumes:
+  keycloak_data:

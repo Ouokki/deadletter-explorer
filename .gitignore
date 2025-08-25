@@ -15,3 +15,6 @@ Thumbs.db
 # Env
 .env
 .env.local
+
+/scripts/*.json
+/scripts/*.txt

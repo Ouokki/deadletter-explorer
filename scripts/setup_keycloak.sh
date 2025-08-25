@@ -18,6 +18,9 @@ USER1="alice"       # triager
 USER1_PASS="pass"
 USER2="bob"         # viewer
 USER2_PASS="pass"
+
+# For test users (set a domain you control in real setups)
+USER_EMAIL_DOMAIN="example.test"
 # ---------------------------------------------------------------------------
 
 echo ">>> Starting Keycloak container (${KC_IMAGE}) on port ${KC_HOST_PORT}…"
@@ -100,7 +103,6 @@ fi
 
 # Add Audience mapper to FE so tokens include aud: dle-api
 echo ">>> Ensuring Audience mapper on '${CLIENT_FE}' (audience=${CLIENT_API})…"
-# Check if mapper exists
 MAPPER_EXISTS=$(kcadm get "clients/${CID_FE}/protocol-mappers/models" -r "${REALM}" | jq -r '.[] | select(.name=="audience-dle-api") | .id' || true)
 if [[ -z "${MAPPER_EXISTS}" ]]; then
   kcadm create "clients/${CID_FE}/protocol-mappers/models" -r "${REALM}" \
@@ -122,31 +124,49 @@ for r in viewer triager replayer; do
   fi
 done
 
-# Create/Update users and assign roles directly (simpler than groups via CLI)
+# --- CHANGES HERE: fully set up user accounts (no required actions pending) ---
 create_or_update_user() {
   local uname="$1" upass="$2" roles_csv="$3"
+
+  # Create or enable user
   local USER_ID
-  USER_ID=$(kcadm get users -r "${REALM}" -q "username=${uname}" --fields id --format csv --noquotes 2>/dev/null || true)
+  USER_ID=$(kcadm get users -r "${REALM}" -q "username=${uname}" | jq -r '.[0].id // empty')
   if [[ -z "${USER_ID}" ]]; then
     echo ">>> Creating user ${uname}…"
     kcadm create users -r "${REALM}" -s "username=${uname}" -s enabled=true >/dev/null
-    USER_ID=$(kcadm get users -r "${REALM}" -q "username=${uname}" --fields id --format csv --noquotes)
+    USER_ID=$(kcadm get users -r "${REALM}" -q "username=${uname}" | jq -r '.[0].id')
   else
     echo "User ${uname} exists."
+    kcadm update "users/${USER_ID}" -r "${REALM}" -s 'enabled=true' >/dev/null
   fi
-  # Set password
-  kcadm set-password -r "${REALM}" --userid "${USER_ID}" --new-password "${upass}" >/dev/null
 
-  # Clear any existing client role mappings for this client
-  # (skip if you want additive behavior)
-  :
-  # Assign roles
+  # Set NON-temporary password (use helper; avoids the /reset-password path)
+  kcadm set-password -r "${REALM}" --userid "${USER_ID}" \
+    --new-password "${upass}" --temporary=false >/dev/null
+
+  # Fully satisfy common required actions / profile
+  kcadm update "users/${USER_ID}" -r "${REALM}" \
+    -s "email=${uname}@${USER_EMAIL_DOMAIN}" \
+    -s "emailVerified=true" \
+    -s 'firstName='"${uname^}" \
+    -s 'lastName=User' \
+    -s 'requiredActions=[]' \
+    -s 'totp=false' >/dev/null
+
+  # Assign API client roles
   IFS=',' read -r -a roles <<< "${roles_csv}"
   for role in "${roles[@]}"; do
     echo "Assigning role ${role} to user ${uname}…"
-    kcadm add-roles -r "${REALM}" --uusername "${uname}" --cclientid "${CLIENT_API}" --rolename "${role}" >/dev/null
+    kcadm add-roles -r "${REALM}" --uusername "${uname}" \
+      --cclientid "${CLIENT_API}" --rolename "${role}" >/dev/null
   done
+
+  # Debug
+  echo ">>> ${uname} summary:"
+  kcadm get "users/${USER_ID}" -r "${REALM}" \
+    --fields username,enabled,email,emailVerified,requiredActions | jq .
 }
+# ------------------------------------------------------------------------------
 
 # alice = triager (+ viewer)
 create_or_update_user "${USER1}" "${USER1_PASS}" "viewer,triager"

@@ -4,11 +4,10 @@ dle:
 
 spring:
   main:
-    web-application-type: servlet
+    web-application-type: reactive
   security:
     oauth2:
       resourceserver:
         jwt:
-          jwk-set-uri: http://invalid
   kafka:
     bootstrap-servers: "localhost:9092"

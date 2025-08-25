@@ -1,0 +1,40 @@
+{
+  "realm": "dle",
+  "enabled": true,
+
+  "clients": [
+    {
+      "clientId": "dlq-backend",
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "redirectUris": ["*"],
+      "webOrigins": ["*"],
+      "attributes": { "access.token.lifespan": "600" }
+    }
+  ],
+
+  "roles": {
+    "realm": [
+      { "name": "viewer" },
+      { "name": "triager" },
+      { "name": "replayer" }
+    ]
+  },
+
+  "users": [
+    {
+      "username": "alice",
+      "enabled": true,
+      "email": "alice@example.com",
+      "emailVerified": true,
+      "firstName": "Alice",
+      "lastName": "Tester",
+      "requiredActions": [],
+      "credentials": [
+        { "type": "password", "value": "password", "temporary": false }
+      ],
+      "realmRoles": ["viewer", "triager", "replayer"]
+    }
+  ]
+}

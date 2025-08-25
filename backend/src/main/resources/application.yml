@@ -2,8 +2,15 @@ server:
   port: 8080
 
 spring:
+  main:
+    web-application-type: reactive
   application:
     name: deadletter-explorer
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8081/realms/dle
   kafka:
     bootstrap-servers: ${KAFKA_BROKERS:localhost:29092}
     consumer:
@@ -16,6 +23,12 @@ spring:
         isolation.level: read_committed
     properties:
       allow.auto.create.topics: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
 
 logging:
   level:

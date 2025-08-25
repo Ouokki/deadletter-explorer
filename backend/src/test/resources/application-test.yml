@@ -3,5 +3,11 @@ dle:
     allowedOrigins: "http://localhost:5173,http://example.com"
 
 spring:
+  main:
+    web-application-type: reactive
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
   kafka:
     bootstrap-servers: "localhost:9092"

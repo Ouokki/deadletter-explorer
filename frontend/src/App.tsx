@@ -6,6 +6,7 @@ import { MessageDto } from './types/types';
 import TargetTopicBar from './components/TargetTopicBar';
 import TopicList from './components/TopicList';
 import MessagesTable from './components/MessagesTable';
+import { Navbar } from './components/Navbar';
 
 export default function App() {
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
@@ -38,21 +39,31 @@ export default function App() {
   };
 
   return (
-    <div className="page">
-      <header className="header">
-        <h1>DeadLetter Explorer</h1>
-        <p className="muted">Inspect and replay messages from Kafka DLQs (local MVP)</p>
+    <>
+    <Navbar />
+    <div className="min-h-screen bg-gray-50 text-gray-900">
+      {/* Header */}
+      <header className="border-b bg-white shadow-sm px-6 py-4">
+        <h1 className="text-2xl font-semibold">DeadLetter Explorer</h1>
+        <p className="text-gray-500 text-sm">
+          Inspect and replay messages from Kafka DLQs (local MVP)
+        </p>
       </header>
 
-      <TargetTopicBar
-        value={targetTopic}
-        onChange={setTargetTopic}
-        status={status}
-      />
+      {/* Target Topic Bar */}
+      <div className="px-6 py-4">
+        <TargetTopicBar
+          value={targetTopic}
+          onChange={setTargetTopic}
+          status={status}
+        />
+      </div>
 
-      <div className="layout">
-        <aside className="panel">
-          <b>DLQ Topics</b>
+      {/* Layout */}
+      <div className="grid grid-cols-12 gap-6 px-6 pb-6">
+        {/* Sidebar */}
+        <aside className="col-span-3 bg-white border rounded-lg shadow-sm p-4">
+          <h2 className="font-medium mb-2">DLQ Topics</h2>
           <TopicList
             topics={topics}
             selected={selectedTopic}
@@ -60,19 +71,27 @@ export default function App() {
           />
         </aside>
 
-        <main className="panel">
-          <div className="panelHeader">
-            <b>Messages {selectedTopic ? `in ${selectedTopic}` : ''}</b>
-            {loading && <span>Loading…</span>}
+        {/* Main Content */}
+        <main className="col-span-9 bg-white border rounded-lg shadow-sm p-4 flex flex-col">
+          <div className="flex items-center justify-between border-b pb-2 mb-4">
+            <h2 className="font-medium">
+              Messages {selectedTopic ? `in ${selectedTopic}` : ""}
+            </h2>
+            {loading && <span className="text-sm text-gray-500">Loading…</span>}
           </div>
 
-          <MessagesTable
-            messages={messages}
-            onReplay={replayOne}
-            emptyText="No messages yet"
-          />
+          <div className="flex-1 overflow-auto">
+            <MessagesTable
+              messages={messages}
+              onReplay={replayOne}
+              emptyText="No messages yet"
+            />
+          </div>
         </main>
       </div>
     </div>
+
+    </>
+    
   );
 }

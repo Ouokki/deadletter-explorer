@@ -18,9 +18,12 @@ USER1="alice"       # triager
 USER1_PASS="pass"
 USER2="bob"         # viewer
 USER2_PASS="pass"
+<<<<<<< HEAD
 
 # For test users (set a domain you control in real setups)
 USER_EMAIL_DOMAIN="example.test"
+=======
+>>>>>>> 2f84560d3a7866ac78bcd9ee5901ecea34589d4b
 # ---------------------------------------------------------------------------
 
 echo ">>> Starting Keycloak container (${KC_IMAGE}) on port ${KC_HOST_PORT}…"
@@ -103,6 +106,10 @@ fi
 
 # Add Audience mapper to FE so tokens include aud: dle-api
 echo ">>> Ensuring Audience mapper on '${CLIENT_FE}' (audience=${CLIENT_API})…"
+<<<<<<< HEAD
+=======
+# Check if mapper exists
+>>>>>>> 2f84560d3a7866ac78bcd9ee5901ecea34589d4b
 MAPPER_EXISTS=$(kcadm get "clients/${CID_FE}/protocol-mappers/models" -r "${REALM}" | jq -r '.[] | select(.name=="audience-dle-api") | .id' || true)
 if [[ -z "${MAPPER_EXISTS}" ]]; then
   kcadm create "clients/${CID_FE}/protocol-mappers/models" -r "${REALM}" \
@@ -124,6 +131,7 @@ for r in viewer triager replayer; do
   fi
 done
 
+<<<<<<< HEAD
 # --- CHANGES HERE: fully set up user accounts (no required actions pending) ---
 create_or_update_user() {
   local uname="$1" upass="$2" roles_csv="$3"
@@ -167,6 +175,33 @@ create_or_update_user() {
     --fields username,enabled,email,emailVerified,requiredActions | jq .
 }
 # ------------------------------------------------------------------------------
+=======
+# Create/Update users and assign roles directly (simpler than groups via CLI)
+create_or_update_user() {
+  local uname="$1" upass="$2" roles_csv="$3"
+  local USER_ID
+  USER_ID=$(kcadm get users -r "${REALM}" -q "username=${uname}" --fields id --format csv --noquotes 2>/dev/null || true)
+  if [[ -z "${USER_ID}" ]]; then
+    echo ">>> Creating user ${uname}…"
+    kcadm create users -r "${REALM}" -s "username=${uname}" -s enabled=true >/dev/null
+    USER_ID=$(kcadm get users -r "${REALM}" -q "username=${uname}" --fields id --format csv --noquotes)
+  else
+    echo "User ${uname} exists."
+  fi
+  # Set password
+  kcadm set-password -r "${REALM}" --userid "${USER_ID}" --new-password "${upass}" >/dev/null
+
+  # Clear any existing client role mappings for this client
+  # (skip if you want additive behavior)
+  :
+  # Assign roles
+  IFS=',' read -r -a roles <<< "${roles_csv}"
+  for role in "${roles[@]}"; do
+    echo "Assigning role ${role} to user ${uname}…"
+    kcadm add-roles -r "${REALM}" --uusername "${uname}" --cclientid "${CLIENT_API}" --rolename "${role}" >/dev/null
+  done
+}
+>>>>>>> 2f84560d3a7866ac78bcd9ee5901ecea34589d4b
 
 # alice = triager (+ viewer)
 create_or_update_user "${USER1}" "${USER1_PASS}" "viewer,triager"

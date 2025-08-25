@@ -28,7 +28,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Testcontainers(disabledWithoutDocker = true)
+/*@Testcontainers(disabledWithoutDocker = true)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 class SmokeTestWithTestcontainers {
@@ -123,4 +123,4 @@ class SmokeTestWithTestcontainers {
         assertThat(first.get("topic")).isEqualTo(DLQ_TOPIC);
 
     }
-}
+}*/

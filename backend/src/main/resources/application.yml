@@ -2,6 +2,8 @@ server:
   port: 8080
 
 spring:
+  main:
+    web-application-type: reactive
   application:
     name: deadletter-explorer
   security:
@@ -21,6 +23,12 @@ spring:
         isolation.level: read_committed
     properties:
       allow.auto.create.topics: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
 
 logging:
   level:

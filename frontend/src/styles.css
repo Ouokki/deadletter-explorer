@@ -23,3 +23,29 @@
 
 .code { opacity: .8; }
 .pre { max-width: 600px; overflow: auto; margin: 0; }
+
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #282c34;
+  padding: 0.75rem 1.5rem;
+  color: white;
+}
+
+.logo {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.nav-actions button {
+  margin-left: 1rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  background: #61dafb;
+  color: black;
+  cursor: pointer;
+  border-radius: 4px;
+}
+

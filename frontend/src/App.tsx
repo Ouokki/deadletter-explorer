@@ -38,6 +38,7 @@ export default function App() {
   };
 
   return (
+    <>
     <div className="page">
       <header className="header">
         <h1>DeadLetter Explorer</h1>
@@ -74,5 +75,7 @@ export default function App() {
         </main>
       </div>
     </div>
+    </>
+    
   );
 }

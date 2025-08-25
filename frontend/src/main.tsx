@@ -3,7 +3,6 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthProvider';
 import { ApiAuthBridge } from './auth/ApiAuthBridge';
-import { Navbar } from './components/Navbar';
 import App from './App';
 import './styles.css';
 import { LoginGate } from './auth/LoginGate';
@@ -27,7 +26,6 @@ root.render(
     >
       <ApiAuthBridge />
       <BrowserRouter>
-        <Navbar />
         <Routes>
           <Route path="/" element={<LoginGate />} />
           <Route

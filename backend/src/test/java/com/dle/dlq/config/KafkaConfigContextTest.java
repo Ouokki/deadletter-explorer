@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(
         classes = KafkaConfig.class,
-        webEnvironment = SpringBootTest.WebEnvironment.NONE,        
+        webEnvironment = SpringBootTest.WebEnvironment.NONE,
         properties = "spring.main.web-application-type=reactive"
 )
 @ActiveProfiles("test")

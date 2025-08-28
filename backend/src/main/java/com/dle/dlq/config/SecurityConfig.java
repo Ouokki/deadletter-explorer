@@ -29,18 +29,19 @@ public class SecurityConfig {
     @Bean
     SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
         return http
-                .cors(cors -> {})
+                .cors(cors -> {
+                })
                 .csrf(csrf -> csrf.disable())
                 .securityContextRepository(NoOpServerSecurityContextRepository.getInstance()) // stateless
                 .authorizeExchange(auth -> auth
                         .pathMatchers(HttpMethod.GET, "/actuator/health").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/dlq/**").hasAnyRole("viewer", "triager", "replayer")
                         .pathMatchers(HttpMethod.POST, "/api/dlq/replay").hasAnyRole("triager", "replayer")
-                        .anyExchange().authenticated()
-                )
+                        .pathMatchers(HttpMethod.GET, "/api/redaction/rules").hasAnyRole("triager", "replayer")
+                        .pathMatchers(HttpMethod.PUT, "/api/redaction/rules").hasAnyRole("triager", "replayer")
+                        .anyExchange().authenticated())
                 .oauth2ResourceServer(oauth -> oauth
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(reactiveJwtAuthenticationConverter()))
-                )
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(reactiveJwtAuthenticationConverter())))
                 .build();
     }
 
@@ -65,7 +66,8 @@ public class SecurityConfig {
 
     @SuppressWarnings("unchecked")
     private static List<String> extractRoles(Map<String, Object> node, String key) {
-        if (node == null) return List.of();
+        if (node == null)
+            return List.of();
         var v = node.get(key);
         return v instanceof Collection<?> c ? c.stream().map(Object::toString).toList() : List.of();
     }

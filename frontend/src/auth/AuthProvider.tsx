@@ -15,16 +15,8 @@ import type {
   KeycloakLogoutOptions,
 } from 'keycloak-js';
 import { getKeycloak, ensureInit } from './kc-singleton';
+import { AuthUser } from '../types/types';
 
-export type AuthUser = {
-  username?: string;
-  email?: string;
-  firstName?: string;
-  lastName?: string;
-  realmRoles: string[];
-  clientRoles: Record<string, string[]>;
-  raw: any;
-};
 
 export type AuthContextShape = {
   initialized: boolean;

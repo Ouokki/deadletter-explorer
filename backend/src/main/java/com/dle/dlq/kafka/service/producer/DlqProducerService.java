@@ -1,4 +1,4 @@
-package com.dle.dlq.producer;
+package com.dle.dlq.kafka.service.producer;
 
 import java.util.Arrays;
 import java.util.Base64;
@@ -17,8 +17,8 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Service;
 
-import com.dle.dlq.dto.ReplayItem;
-import com.dle.dlq.dto.ReplayRequest;
+import com.dle.dlq.model.ReplayItem;
+import com.dle.dlq.model.ReplayRequest;
 import com.dle.dlq.util.MessageMapper;
 
 @Slf4j

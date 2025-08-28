@@ -1,12 +1,14 @@
+// index.tsx
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Route, Routes, Outlet, Link } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthProvider';
 import { ApiAuthBridge } from './auth/ApiAuthBridge';
 import App from './App';
 import './styles.css';
 import { LoginGate } from './auth/LoginGate';
-import { ProtectedRoute } from './auth/ProtectedRoute';
+import RedactionStudioPage from './pages/RedactionStudioPage';
+import { Navbar } from './components/Navbar';
 
 const container = document.getElementById('root');
 if (!container) throw new Error('Root container #root not found');
@@ -25,18 +27,13 @@ root.render(
       }}
     >
       <ApiAuthBridge />
+      
       <BrowserRouter>
+      <Navbar />
         <Routes>
           <Route path="/" element={<LoginGate />} />
-          <Route
-            path="/home"
-            element={
-              <ProtectedRoute>
-                <App />
-              </ProtectedRoute>
-            }
-          />
-          {/* add more protected routes the same way */}
+          <Route path="/home" element={<App />} />
+          <Route path="/topics/:topic/redaction" element={<RedactionStudioPage />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

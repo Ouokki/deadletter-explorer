@@ -1,4 +1,4 @@
-package com.dle.dlq.consumer;
+package com.dle.dlq.kafka.service.consumer;
 
 import java.time.Duration;
 import java.util.ArrayList;

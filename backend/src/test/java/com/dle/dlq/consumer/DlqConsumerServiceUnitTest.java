@@ -1,6 +1,7 @@
 package com.dle.dlq.consumer;
 
 import com.dle.dlq.dto.MessageDto;
+import com.dle.dlq.kafka.service.consumer.DlqConsumerService;
 import com.dle.dlq.util.MessageMapper;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;

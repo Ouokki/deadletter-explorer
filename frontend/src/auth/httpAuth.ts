@@ -1,4 +1,3 @@
-// Small helper so non-React modules (API service) can get the token.
 
 export type TokenGetter = () => Promise<string | undefined>;
 

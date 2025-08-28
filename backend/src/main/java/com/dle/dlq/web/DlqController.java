@@ -1,10 +1,10 @@
 package com.dle.dlq.web;
 
 import com.dle.dlq.admin.DlqAdminService;
-import com.dle.dlq.consumer.DlqConsumerService;
+import com.dle.dlq.kafka.service.consumer.DlqConsumerService;
 import com.dle.dlq.dto.MessageDto;
-import com.dle.dlq.dto.ReplayRequest;
-import com.dle.dlq.producer.DlqProducerService;
+import com.dle.dlq.model.ReplayRequest;
+import com.dle.dlq.kafka.service.producer.DlqProducerService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

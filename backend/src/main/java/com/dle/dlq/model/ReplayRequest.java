@@ -1,4 +1,4 @@
-package com.dle.dlq.dto;
+package com.dle.dlq.model;
 
 import java.util.List;
 import java.util.Set;

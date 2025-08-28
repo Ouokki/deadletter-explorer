@@ -6,7 +6,6 @@ import { MessageDto } from './types/types';
 import TargetTopicBar from './components/TargetTopicBar';
 import TopicList from './components/TopicList';
 import MessagesTable from './components/MessagesTable';
-import { Navbar } from './components/Navbar';
 
 export default function App() {
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
@@ -39,10 +38,8 @@ export default function App() {
   };
 
   return (
-    <>
-    <Navbar />
+  
     <div className="min-h-screen bg-gray-50 text-gray-900">
-      {/* Header */}
       <header className="border-b bg-white shadow-sm px-6 py-4">
         <h1 className="text-2xl font-semibold">DeadLetter Explorer</h1>
         <p className="text-gray-500 text-sm">
@@ -50,7 +47,6 @@ export default function App() {
         </p>
       </header>
 
-      {/* Target Topic Bar */}
       <div className="px-6 py-4">
         <TargetTopicBar
           value={targetTopic}
@@ -71,7 +67,6 @@ export default function App() {
           />
         </aside>
 
-        {/* Main Content */}
         <main className="col-span-9 bg-white border rounded-lg shadow-sm p-4 flex flex-col">
           <div className="flex items-center justify-between border-b pb-2 mb-4">
             <h2 className="font-medium">
@@ -79,7 +74,6 @@ export default function App() {
             </h2>
             {loading && <span className="text-sm text-gray-500">Loading…</span>}
           </div>
-
           <div className="flex-1 overflow-auto">
             <MessagesTable
               messages={messages}
@@ -91,7 +85,6 @@ export default function App() {
       </div>
     </div>
 
-    </>
     
   );
 }

@@ -1,7 +1,8 @@
 package com.dle.dlq.producer;
 
-import com.dle.dlq.dto.ReplayItem;
-import com.dle.dlq.dto.ReplayRequest;
+import com.dle.dlq.kafka.service.producer.DlqProducerService;
+import com.dle.dlq.model.ReplayItem;
+import com.dle.dlq.model.ReplayRequest;
 import com.dle.dlq.util.MessageMapper;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;

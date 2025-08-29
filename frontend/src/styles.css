@@ -1,3 +1,10 @@
 @import "tailwindcss";
 
+/* src/styles/global.css */
+html, body, #root {
+  background: #0A0F1C !important; /* deep navy */
+  color-scheme: dark;
+}
 
+/* optional: anything mounted at root should not paint its own white bg */
+#root > * { background: transparent; }

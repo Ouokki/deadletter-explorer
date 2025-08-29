@@ -6,6 +6,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.kafka.common.TopicPartition;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.ConsumerFactory;
@@ -24,6 +26,8 @@ public class DlqConsumerService {
 
     private final ConsumerFactory<byte[], byte[]> cf;
 
+    @Getter
+    @Setter
     @Value("${dle.fetchDefault:200}")
     int fetchDefault;
 

@@ -75,7 +75,7 @@ class DlqConsumerServiceUnitTest {
             });
 
             DlqConsumerService svc = new DlqConsumerService(cf);
-            svc.fetchDefault = 200;
+            svc.setFetchDefault(200);
 
             List<MessageDto> out = svc.fetchLastN(topic, limit);
 

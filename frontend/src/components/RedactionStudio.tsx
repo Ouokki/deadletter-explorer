@@ -5,8 +5,6 @@ import * as jsondiffpatch from "jsondiffpatch";
 import { Eye, EyeOff, Plus, Save, Trash2, Play, Shield, Undo2 } from "lucide-react";
 import { HashOptions, MaskOptions, PreviewAuditItem, RedactionAction, RedactionStudioProps, Rule } from "../types/types";
 
-
-
 // ---------- Utilities ----------
 const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -88,11 +86,12 @@ function applyRulesForPreview(src: any, rules: Rule[]): { redacted: any; audit: 
   return { redacted: root, audit };
 }
 
+// ---- Theming helpers (navy–indigo, low gloss) ----
 function Badge({ children, tone = "secondary" }: { children: React.ReactNode; tone?: "secondary" | "danger" }) {
   const cls =
     tone === "danger"
-      ? "bg-red-100 text-red-700 ring-1 ring-inset ring-red-200"
-      : "bg-gray-100 text-gray-800 ring-1 ring-inset ring-gray-200";
+      ? "bg-rose-900/30 text-rose-200 ring-1 ring-inset ring-rose-800/40"
+      : "bg-white/5 text-slate-200 ring-1 ring-inset ring-white/10";
   return (
     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}>{children}</span>
   );
@@ -103,16 +102,10 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
     <button
       type="button"
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
-        checked ? "bg-gray-900" : "bg-gray-300"
-      }`}
+      className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${checked ? "bg-indigo-600" : "bg-slate-600"}`}
       aria-pressed={checked}
     >
-      <span
-        className={`inline-block h-5 w-5 transform rounded-full bg-white transition ${
-          checked ? "translate-x-5" : "translate-x-1"
-        }`}
-      />
+      <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition ${checked ? "translate-x-5" : "translate-x-1"}`} />
     </button>
   );
 }
@@ -121,60 +114,69 @@ function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      className={`w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-900 ${
-        props.className ?? ""
-      }`}
+      className={[
+        "w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-400",
+        "focus:outline-none focus:ring-2 focus:ring-indigo-500",
+        props.className || "",
+      ].join(" ")}
     />
   );
 }
-
 function NumberInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return <TextInput type="number" {...props} />;
 }
-
 function TextArea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
     <textarea
       {...props}
-      className={`w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-mono shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-900 ${
-        props.className ?? ""
-      }`}
+      className={[
+        "w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm font-mono text-slate-100 placeholder:text-slate-400",
+        "focus:outline-none focus:ring-2 focus:ring-indigo-500",
+        props.className || "",
+      ].join(" ")}
     />
   );
 }
-
 function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
   return (
     <select
       {...props}
-      className={`w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-900 ${
-        props.className ?? ""
-      }`}
+      className={[
+        "w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100",
+        "focus:outline-none focus:ring-2 focus:ring-indigo-500",
+        props.className || "",
+      ].join(" ")}
     />
   );
 }
-
-function Button({ variant = "solid", ...rest }: { variant?: "solid" | "ghost" | "secondary" } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
-  const base = "inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-offset-2";
+function Button({
+  variant = "solid",
+  className,
+  ...rest
+}: { variant?: "solid" | "ghost" | "secondary" } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  const base =
+    "inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-indigo-500";
   const variants = {
-    solid: "bg-gray-900 text-white hover:bg-gray-800 focus:ring-gray-900",
-    secondary: "bg-gray-100 text-gray-900 hover:bg-gray-200 focus:ring-gray-300",
-    ghost: "text-gray-700 hover:bg-gray-100 focus:ring-gray-300",
+    solid: "bg-indigo-600 text-white hover:bg-indigo-500",
+    secondary: "border border-white/10 text-slate-200 hover:bg-white/5",
+    ghost: "text-slate-300 hover:bg-white/5",
   } as const;
-  return <button className={`${base} ${variants[variant]}`} {...rest} />;
+  return <button className={`${base} ${variants[variant]} disabled:opacity-50 disabled:cursor-not-allowed ${className || ""}`} {...rest} />;
 }
 
 function RedactionStudio(props: RedactionStudioProps) {
   const [rules, setRules] = useState<Rule[]>(
-    () => props.initialRules ?? [
-      { id: uid(), path: "$.customer.email", action: "MASK", mask: { keepLast: 3, pad: "*" }, enabled: true, note: "mask email" },
-      { id: uid(), path: "$.payment.card.number", action: "HASH", hash: { secretRef: "REDACTION_KEY", short: true }, enabled: true },
-      { id: uid(), path: "$.payment.card.cvv", action: "MASK", mask: { fixed: "[REDACTED]" }, enabled: true },
-    ]
+    () =>
+      props.initialRules ?? [
+        { id: uid(), path: "$.customer.email", action: "MASK", mask: { keepLast: 3, pad: "*" }, enabled: true, note: "mask email" },
+        { id: uid(), path: "$.payment.card.number", action: "HASH", hash: { secretRef: "REDACTION_KEY", short: true }, enabled: true },
+        { id: uid(), path: "$.payment.card.cvv", action: "MASK", mask: { fixed: "[REDACTED]" }, enabled: true },
+      ]
   );
 
   const [sampleText, setSampleText] = useState<string>(() =>
-    props.initialSampleJson ?? JSON.stringify(
+    props.initialSampleJson ??
+    JSON.stringify(
       {
         customer: { name: "Alice Martin", email: "alice.martin@example.com", phone: "+33612345678" },
         payment: { card: { number: "4111111111111111", cvv: "123" }, amount: 129.9 },
@@ -201,10 +203,7 @@ function RedactionStudio(props: RedactionStudioProps) {
   }, [sampleObj, redacted]);
 
   function addRule() {
-    setRules((rs) => [
-      ...rs,
-      { id: uid(), path: "$.path.to.field", action: "MASK", mask: { keepLast: 4, pad: "*" }, enabled: true },
-    ]);
+    setRules((rs) => [...rs, { id: uid(), path: "$.path.to.field", action: "MASK", mask: { keepLast: 4, pad: "*" }, enabled: true }]);
   }
   function removeRule(id: string) { setRules((rs) => rs.filter((r) => r.id !== id)); }
   function updateRule<T extends keyof Rule>(id: string, key: T, val: Rule[T]) { setRules((rs) => rs.map((r) => (r.id === id ? { ...r, [key]: val } : r))); }
@@ -245,15 +244,15 @@ function RedactionStudio(props: RedactionStudioProps) {
   const rulesInvalid = useMemo(() => rules.some((r) => !r.path || !r.action), [rules]);
 
   return (
-    <div className="mx-auto max-w-[1400px] p-4 md:p-6 lg:p-8">
+    <div className="mx-auto max-w-[1400px] p-4 md:p-6 lg:p-8 text-slate-100">
       <div className="mb-6 flex items-center gap-3">
-        <Shield className="h-5 w-5" />
-        <h1 className="text-2xl font-semibold">Redaction Studio</h1>
+        <Shield className="h-5 w-5 text-indigo-400" />
+        <h1 className="text-2xl font-semibold tracking-tight">Redaction Studio</h1>
         <Badge>Preview before saving</Badge>
       </div>
 
       {error && (
-        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+        <div className="mb-4 rounded-xl border border-rose-800/40 bg-rose-900/30 p-4 text-sm text-rose-200">
           <div className="font-semibold">Erreur</div>
           <div>{error}</div>
         </div>
@@ -262,13 +261,13 @@ function RedactionStudio(props: RedactionStudioProps) {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Left column: Rules builder */}
         <div className="space-y-4 lg:col-span-5">
-          <div className="rounded-2xl border bg-white shadow-sm">
-            <div className="border-b p-4">
+          <div className="rounded-2xl border border-white/10 bg-[#0F162B]">
+            <div className="border-b border-white/10 p-4">
               <h2 className="text-base font-semibold">Rules</h2>
             </div>
             <div className="space-y-3 p-4">
               {rules.map((r) => (
-                <div key={r.id} className="rounded-xl border p-3">
+                <div key={r.id} className="rounded-xl border border-white/10 p-3">
                   <div className="mb-2 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <Toggle checked={r.enabled !== false} onChange={(v) => updateRule(r.id, "enabled", v)} />
@@ -276,7 +275,7 @@ function RedactionStudio(props: RedactionStudioProps) {
                     </div>
                     <div className="flex items-center gap-1">
                       <button
-                        className="inline-flex items-center justify-center rounded-lg p-2 text-gray-600 hover:bg-gray-100"
+                        className="inline-flex items-center justify-center rounded-lg p-2 text-slate-300 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         onClick={() => removeRule(r.id)}
                         aria-label="Remove rule"
                       >
@@ -287,7 +286,7 @@ function RedactionStudio(props: RedactionStudioProps) {
 
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
                     <div className="md:col-span-3">
-                      <label className="mb-1 block text-sm font-medium">JSONPath</label>
+                      <label className="mb-1 block text-sm text-slate-300">JSONPath</label>
                       <TextInput
                         placeholder="$.customer.email or $.items[*].secret"
                         value={r.path}
@@ -295,7 +294,7 @@ function RedactionStudio(props: RedactionStudioProps) {
                       />
                     </div>
                     <div>
-                      <label className="mb-1 block text-sm font-medium">Action</label>
+                      <label className="mb-1 block text-sm text-slate-300">Action</label>
                       <Select value={r.action} onChange={(e) => updateRule(r.id, "action", e.target.value as RedactionAction)}>
                         <option value="MASK">MASK</option>
                         <option value="REMOVE">REMOVE</option>
@@ -307,28 +306,28 @@ function RedactionStudio(props: RedactionStudioProps) {
                   {r.action === "MASK" && (
                     <div className="mt-3 grid grid-cols-3 gap-3">
                       <div>
-                        <label className="mb-1 block text-sm font-medium">keepFirst</label>
+                        <label className="mb-1 block text-sm text-slate-300">keepFirst</label>
                         <NumberInput
                           value={r.mask?.keepFirst ?? 0}
                           onChange={(e) => updateRule(r.id, "mask", { ...r.mask, keepFirst: Number(e.target.value) })}
                         />
                       </div>
                       <div>
-                        <label className="mb-1 block text-sm font-medium">keepLast</label>
+                        <label className="mb-1 block text-sm text-slate-300">keepLast</label>
                         <NumberInput
                           value={r.mask?.keepLast ?? 0}
                           onChange={(e) => updateRule(r.id, "mask", { ...r.mask, keepLast: Number(e.target.value) })}
                         />
                       </div>
                       <div>
-                        <label className="mb-1 block text-sm font-medium">pad</label>
+                        <label className="mb-1 block text-sm text-slate-300">pad</label>
                         <TextInput
                           value={r.mask?.pad ?? "*"}
                           onChange={(e) => updateRule(r.id, "mask", { ...r.mask, pad: e.target.value })}
                         />
                       </div>
                       <div className="col-span-3">
-                        <label className="mb-1 block text-sm font-medium">fixed replacement (optional)</label>
+                        <label className="mb-1 block text-sm text-slate-300">fixed replacement (optional)</label>
                         <TextInput
                           placeholder="[REDACTED]"
                           value={r.mask?.fixed ?? ""}
@@ -341,17 +340,17 @@ function RedactionStudio(props: RedactionStudioProps) {
                   {r.action === "HASH" && (
                     <div className="mt-3 grid grid-cols-2 gap-3">
                       <div>
-                        <label className="mb-1 block text-sm font-medium">secretRef (label)</label>
+                        <label className="mb-1 block text-sm text-slate-300">secretRef (label)</label>
                         <TextInput
                           placeholder="REDACTION_KEY"
                           value={r.hash?.secretRef ?? ""}
                           onChange={(e) => updateRule(r.id, "hash", { ...r.hash, secretRef: e.target.value })}
                         />
                       </div>
-                      <label className="mb-1 flex items-center gap-2 text-sm font-medium">
+                      <label className="mb-1 flex items-center gap-2 text-sm text-slate-300">
                         <input
                           type="checkbox"
-                          className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900"
+                          className="h-4 w-4 rounded border-white/10 bg-white/5 accent-indigo-500"
                           checked={!!r.hash?.short}
                           onChange={(e) => updateRule(r.id, "hash", { ...r.hash, short: e.target.checked })}
                         />
@@ -361,7 +360,7 @@ function RedactionStudio(props: RedactionStudioProps) {
                   )}
 
                   <div className="mt-3">
-                    <label className="mb-1 block text-sm font-medium">Note (optional)</label>
+                    <label className="mb-1 block text-sm text-slate-300">Note (optional)</label>
                     <TextInput
                       placeholder="why this rule exists (audit)"
                       value={r.note ?? ""}
@@ -375,11 +374,11 @@ function RedactionStudio(props: RedactionStudioProps) {
                 <Button onClick={addRule} variant="secondary">
                   <Plus className="h-4 w-4" /> Add rule
                 </Button>
-                <div className="mx-2 h-6 w-px bg-gray-200" />
-                <label className="flex items-center gap-2 text-sm text-gray-500">
+                <div className="mx-2 h-6 w-px bg-white/10" />
+                <label className="flex items-center gap-2 text-sm text-slate-400">
                   <input
                     type="checkbox"
-                    className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900"
+                    className="h-4 w-4 rounded border-white/10 bg-white/5 accent-indigo-500"
                     checked={validateOnEdit}
                     onChange={(e) => setValidateOnEdit(e.target.checked)}
                   />
@@ -404,21 +403,21 @@ function RedactionStudio(props: RedactionStudioProps) {
 
         {/* Right column: Sample + Preview */}
         <div className="space-y-4 lg:col-span-7">
-          <div className="rounded-2xl border bg-white shadow-sm">
-            <div className="border-b p-4">
+          <div className="rounded-2xl border border-white/10 bg-[#0F162B]">
+            <div className="border-b border-white/10 p-4">
               <h2 className="text-base font-semibold">Sample payload</h2>
             </div>
             <div className="p-4">
-              <div className="mb-3 inline-flex rounded-lg bg-gray-100 p-1 text-sm">
+              <div className="mb-3 inline-flex rounded-lg border border-white/10 bg-white/5 p-1 text-sm">
                 <button
                   onClick={() => setTab("paste")}
-                  className={`rounded-md px-3 py-1.5 ${tab === "paste" ? "bg-white shadow" : "text-gray-600"}`}
+                  className={`rounded-md px-3 py-1.5 ${tab === "paste" ? "bg-[#0F162B] text-slate-100" : "text-slate-400 hover:text-slate-200"}`}
                 >
                   Paste JSON
                 </button>
                 <button
                   onClick={() => props.onPickMessage && setTab("pick")}
-                  className={`rounded-md px-3 py-1.5 ${tab === "pick" ? "bg-white shadow" : "text-gray-600"} ${!props.onPickMessage ? "opacity-50" : ""}`}
+                  className={`rounded-md px-3 py-1.5 ${tab === "pick" ? "bg-[#0F162B] text-slate-100" : "text-slate-400 hover:text-slate-200"} ${!props.onPickMessage ? "opacity-50" : ""}`}
                   disabled={!props.onPickMessage}
                 >
                   Pick from DLQ
@@ -434,8 +433,8 @@ function RedactionStudio(props: RedactionStudioProps) {
             </div>
           </div>
 
-          <div className="rounded-2xl border bg-white shadow-sm">
-            <div className="flex items-center justify-between border-b p-4">
+          <div className="rounded-2xl border border-white/10 bg-[#0F162B]">
+            <div className="flex items-center justify-between border-b border-white/10 p-4">
               <h2 className="text-base font-semibold">Preview</h2>
               <Button variant="ghost" onClick={() => setShowDiff((v) => !v)}>
                 {showDiff ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />} {showDiff ? "Hide diff" : "Show diff"}
@@ -443,7 +442,7 @@ function RedactionStudio(props: RedactionStudioProps) {
             </div>
             <div className="p-4">
               {!hasPreviewed && (
-                <div className="rounded-lg border border-dashed p-6 text-center text-sm text-gray-500">
+                <div className="rounded-lg border border-dashed border-white/20 p-6 text-center text-sm text-slate-400">
                   Run a preview to see redacted output and diff.
                 </div>
               )}
@@ -451,22 +450,38 @@ function RedactionStudio(props: RedactionStudioProps) {
               {hasPreviewed && (
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Original</label>
-                    <div className="mt-2 rounded-xl border p-3">
+                    <label className="text-sm font-medium text-slate-300">Original</label>
+                    <div className="mt-2 rounded-xl border border-white/10 bg-black/20 p-3">
                       {sampleObj ? (
-                        <ReactJson src={sampleObj} name={false} collapsed={2} enableClipboard={false} displayDataTypes={false} />
+                        <ReactJson
+                          src={sampleObj}
+                          name={false}
+                          collapsed={2}
+                          enableClipboard={false}
+                          displayDataTypes={false}
+                          theme="monokai"
+                          style={{ backgroundColor: 'transparent' }}
+                        />
                       ) : (
-                        <div className="text-sm text-gray-500">Invalid JSON</div>
+                        <div className="text-sm text-slate-400">Invalid JSON</div>
                       )}
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Redacted</label>
-                    <div className="mt-2 rounded-xl border p-3">
+                    <label className="text-sm font-medium text-slate-300">Redacted</label>
+                    <div className="mt-2 rounded-xl border border-white/10 bg-black/20 p-3">
                       {redacted ? (
-                        <ReactJson src={redacted} name={false} collapsed={2} enableClipboard={false} displayDataTypes={false} />
+                        <ReactJson
+                          src={redacted}
+                          name={false}
+                          collapsed={2}
+                          enableClipboard={false}
+                          displayDataTypes={false}
+                          theme="monokai"
+                          style={{ backgroundColor: 'transparent' }}
+                        />
                       ) : (
-                        <div className="text-sm text-gray-500">No preview yet</div>
+                        <div className="text-sm text-slate-400">No preview yet</div>
                       )}
                     </div>
                   </div>
@@ -475,37 +490,37 @@ function RedactionStudio(props: RedactionStudioProps) {
 
               {hasPreviewed && showDiff && diff && (
                 <div className="mt-4">
-                  <label className="text-sm font-medium text-gray-700">Diff</label>
-                  <div className="mt-2 overflow-auto rounded-xl border p-3">
-                    <pre className="text-xs leading-relaxed">{JSON.stringify(diff, null, 2)}</pre>
+                  <label className="text-sm font-medium text-slate-300">Diff</label>
+                  <div className="mt-2 overflow-auto rounded-xl border border-white/10 bg-black/20 p-3">
+                    <pre className="text-xs leading-relaxed text-slate-200">{JSON.stringify(diff, null, 2)}</pre>
                   </div>
                 </div>
               )}
 
               {hasPreviewed && (
                 <div className="mt-4">
-                  <label className="text-sm font-medium text-gray-700">Audit</label>
-                  <div className="mt-2 overflow-auto rounded-xl border">
+                  <label className="text-sm font-medium text-slate-300">Audit</label>
+                  <div className="mt-2 overflow-auto rounded-xl border border-white/10">
                     <table className="w-full text-left text-sm">
-                      <thead>
-                        <tr className="border-b bg-gray-50">
-                          <th className="px-3 py-2">Action</th>
-                          <th className="px-3 py-2">JSONPath</th>
-                          <th className="px-3 py-2">Matches</th>
-                          <th className="px-3 py-2">Note</th>
-                          <th className="px-3 py-2">Error</th>
+                      <thead className="sticky top-0 z-10 bg-[#0F162B]">
+                        <tr className="border-b border-white/10">
+                          <th className="px-3 py-2 text-xs font-medium text-slate-400">Action</th>
+                          <th className="px-3 py-2 text-xs font-medium text-slate-400">JSONPath</th>
+                          <th className="px-3 py-2 text-xs font-medium text-slate-400">Matches</th>
+                          <th className="px-3 py-2 text-xs font-medium text-slate-400">Note</th>
+                          <th className="px-3 py-2 text-xs font-medium text-slate-400">Error</th>
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody className="divide-y divide-white/5">
                         {audit.map((a, i) => (
-                          <tr key={i} className="border-t">
+                          <tr key={i} className="hover:bg-white/5">
                             <td className="px-3 py-2">
                               <Badge tone={a.action === "REMOVE" ? "danger" : "secondary"}>{a.action}</Badge>
                             </td>
-                            <td className="px-3 py-2 font-mono">{a.path}</td>
+                            <td className="px-3 py-2 font-mono text-slate-200">{a.path}</td>
                             <td className="px-3 py-2">{a.count}</td>
-                            <td className="px-3 py-2 text-gray-500">{a.note ?? ""}</td>
-                            <td className="px-3 py-2 text-red-600">{a.error ?? ""}</td>
+                            <td className="px-3 py-2 text-slate-400">{a.note ?? ""}</td>
+                            <td className="px-3 py-2 text-rose-300">{a.error ?? ""}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -518,8 +533,8 @@ function RedactionStudio(props: RedactionStudioProps) {
         </div>
       </div>
 
-      <div className="mt-8 rounded-xl border bg-gray-50 p-4 text-sm text-gray-600">
-        <p className="mb-2 font-medium">Implementation notes</p>
+      <div className="mt-8 rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
+        <p className="mb-2 font-medium text-slate-200">Implementation notes</p>
         <ul className="list-inside list-disc space-y-1">
           <li>Preview uses a fast, non-cryptographic hash (FNV-1a). Backend should apply HMAC-SHA256 at persist/replay time.</li>
           <li>Use server-side validation for JSONPath if you need role-based checks or schema-aware guards.</li>

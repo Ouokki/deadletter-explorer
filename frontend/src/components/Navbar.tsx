@@ -2,21 +2,14 @@ import React from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { NavLink, useNavigate } from "react-router-dom";
 
-const buttonBase =
-  "inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2";
-const buttonPrimary =
-  `${buttonBase} bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500`;
-const buttonDestructive =
-  `${buttonBase} bg-red-600 hover:bg-red-700 text-white focus:ring-red-500`;
-
-const linkBase = "rounded-md px-3 py-2 text-sm font-medium";
-const linkIdle = "text-gray-300 hover:bg-gray-800 hover:text-white";
-const linkActive = "bg-gray-800 text-white";
+const cx = (...cls: Array<string | false | null | undefined>) =>
+  cls.filter(Boolean).join(" ");
 
 export const Navbar: React.FC = () => {
   const { authenticated, user, login, logout } = useAuth();
   const navigate = useNavigate();
   const [topic, setTopic] = React.useState<string>("orders-DLQ");
+  const [open, setOpen] = React.useState(false);
 
   // keep last topic between refreshes (optional)
   React.useEffect(() => {
@@ -36,73 +29,63 @@ export const Navbar: React.FC = () => {
     const t = topic.trim();
     if (!t) return;
     navigate(`/topics/${encodeURIComponent(t)}/redaction`);
+    setOpen(false);
   };
 
+
   return (
-    <nav className="sticky top-0 z-40 w-full bg-gray-900 text-white shadow-md">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
-        {/* Brand + left nav */}
-        <div className="flex items-center gap-4">
+    <nav className="sticky top-0 z-40 w-full border-b border-white/10 bg-[#0C1222] text-slate-100">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 md:px-6">
+        <div className="flex items-center gap-3">
           <NavLink
             to="/home"
-            className={({ isActive }) =>
-              `${linkBase} ${isActive ? linkActive : linkIdle}`
-            }
+            className="text-sm font-semibold tracking-tight"
             end
           >
             Dead Letter Explorer
           </NavLink>
 
           {authenticated && (
-            <div className="hidden items-center gap-1 sm:flex">
+            <div className="ml-2 hidden items-center gap-1 md:flex">
               <NavLink
                 to="/home"
                 end
                 className={({ isActive }) =>
-                  `${linkBase} ${isActive ? linkActive : linkIdle}`
+                  `rounded-md px-3 py-2 text-sm font-medium ${
+                    isActive
+                      ? "text-white bg-white/10"
+                      : "text-slate-300 hover:text-white hover:bg-white/5"
+                  }`
                 }
               >
                 Home
               </NavLink>
-
-              <form onSubmit={goToStudio} className="ml-2 flex items-center gap-2">
-                <input
-                  value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
-                  placeholder="topic (e.g. orders-DLQ)"
-                  className="w-48 rounded-md border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button
-                  type="submit"
-                  className={`${buttonBase} bg-gray-800 hover:bg-gray-700 text-white focus:ring-gray-600`}
-                  title="Open Redaction Studio for this topic"
-                >
-                  Redaction Studio
-                </button>
-              </form>
             </div>
           )}
         </div>
 
-        {/* Right side: auth */}
-        {authenticated ? (
-          <div className="flex items-center gap-4">
-            <span className="hidden text-sm text-gray-300 sm:inline">
-              {displayName}
-            </span>
+        <div className="hidden items-center gap-3 md:flex">
+          {authenticated ? (
+            <>
+              <span className="text-xs text-slate-300">{displayName}</span>
+              <button
+                className="inline-flex items-center justify-center rounded-lg px-3.5 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-500 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-[#0C1222]"
+                onClick={() => logout({ redirectUri: window.location.origin })}
+              >
+                Logout
+              </button>
+            </>
+          ) : (
             <button
-              className={buttonDestructive}
-              onClick={() => logout({ redirectUri: window.location.origin })}
+              className="inline-flex items-center justify-center rounded-lg px-3.5 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-500 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-[#0C1222]"
+              onClick={() => login()}
             >
-              Logout
+              Login
             </button>
-          </div>
-        ) : (
-          <button className={buttonPrimary} onClick={() => login()}>
-            Login
-          </button>
-        )}
+          )}
+        </div>
       </div>
     </nav>
+
   );
 };

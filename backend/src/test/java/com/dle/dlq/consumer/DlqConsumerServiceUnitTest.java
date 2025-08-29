@@ -133,7 +133,7 @@ class DlqConsumerServiceUnitTest {
             });
 
             DlqConsumerService svc = new DlqConsumerService(cf);
-            svc.fetchDefault = fetchDefault;
+            svc.setFetchDefault(fetchDefault);
 
             List<MessageDto> out = svc.fetchLastN(topic, limit);
 
@@ -191,7 +191,7 @@ class DlqConsumerServiceUnitTest {
             });
 
             DlqConsumerService svc = new DlqConsumerService(cf);
-            svc.fetchDefault = 200;
+            svc.setFetchDefault(200);
 
             List<MessageDto> out = svc.fetchLastN(topic, requested);
 
@@ -260,7 +260,7 @@ class DlqConsumerServiceUnitTest {
             logger.setLevel(Level.DEBUG);
 
             DlqConsumerService svc = new DlqConsumerService(cf);
-            svc.fetchDefault = 0;
+            svc.setFetchDefault(0);
 
             List<MessageDto> out = svc.fetchLastN(topic, 0);
 

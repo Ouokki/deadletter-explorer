@@ -7,7 +7,6 @@ import TopicList from "./components/TopicList";
 import MessagesTable from "./components/MessagesTable";
 import { useNavigate } from "react-router-dom";
 
-// ----- UI tokens (aligned with the navbar) -----
 const cx = (...cls: Array<string | false | null | undefined>) =>
   cls.filter(Boolean).join(" ");
 
@@ -78,7 +77,6 @@ export default function App() {
                 Dead Letter Explorer
               </h1>
             </div>
-            {/* Toolbar: Studio quick-jump */}
             <form onSubmit={goToStudio} className="hidden items-center gap-2 md:flex">
               <input
                 value={studioTopic}
@@ -96,7 +94,6 @@ export default function App() {
             Inspect & replay messages from Kafka DLQs (local MVP)
           </p>
 
-          {/* Status line */}
           {status && (
             <div
               className="mt-3 rounded-md border border-slate-700/60 bg-slate-900/60 px-3 py-2 text-xs text-slate-300"
@@ -107,7 +104,6 @@ export default function App() {
             </div>
           )}
 
-          {/* Mobile Studio quick-jump */}
           <form onSubmit={goToStudio} className="mt-3 flex items-center gap-2 md:hidden">
             <input
               value={studioTopic}
@@ -122,7 +118,6 @@ export default function App() {
         </div>
       </header>
 
-      {/* Content */}
       <div className="mx-auto max-w-7xl px-4 py-5 md:px-6">
         {/* Replay target toolbar */}
         <section className="mb-5 rounded-xl border border-white/5 bg-slate-900/60 p-3 backdrop-blur">
@@ -145,9 +140,7 @@ export default function App() {
           </div>
         </section>
 
-        {/* Layout */}
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
-          {/* Sidebar */}
           <aside className="lg:col-span-3 rounded-2xl border border-white/5 bg-slate-900/60 p-4 shadow-sm backdrop-blur">
             <h2 className="mb-2 text-sm font-medium text-slate-200">DLQ Topics</h2>
             <div className="text-slate-200/90">
@@ -155,7 +148,6 @@ export default function App() {
             </div>
           </aside>
 
-          {/* Main */}
           <main className="lg:col-span-9 rounded-2xl border border-white/5 bg-slate-900/60 p-4 shadow-sm backdrop-blur">
             <div className="mb-3 flex items-center justify-between border-b border-white/5 pb-2">
               <h2 className="text-sm font-medium text-slate-200">
@@ -174,7 +166,6 @@ export default function App() {
           </main>
         </div>
 
-        {/* Bottom actions (optional): another Studio jump */}
         <div className="mt-6 flex items-center justify-end">
           <form onSubmit={goToStudio} className="flex items-center gap-2">
             <input

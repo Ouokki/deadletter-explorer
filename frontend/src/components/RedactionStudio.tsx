@@ -5,7 +5,6 @@ import * as jsondiffpatch from "jsondiffpatch";
 import { Eye, EyeOff, Plus, Save, Trash2, Play, Shield, Undo2 } from "lucide-react";
 import { HashOptions, MaskOptions, PreviewAuditItem, RedactionAction, RedactionStudioProps, Rule } from "../types/types";
 
-// ---------- Utilities ----------
 const uid = () => Math.random().toString(36).slice(2, 10);
 
 function safeParse(json: string): any | undefined {
@@ -86,7 +85,6 @@ function applyRulesForPreview(src: any, rules: Rule[]): { redacted: any; audit: 
   return { redacted: root, audit };
 }
 
-// ---- Theming helpers (navy–indigo, low gloss) ----
 function Badge({ children, tone = "secondary" }: { children: React.ReactNode; tone?: "secondary" | "danger" }) {
   const cls =
     tone === "danger"

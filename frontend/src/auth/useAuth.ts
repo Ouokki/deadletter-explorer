@@ -1,4 +1,3 @@
-/* Hook-only file keeps HMR stable */
 import { useContext } from 'react';
 import { AuthContext, type AuthContextShape } from './AuthProvider';
 

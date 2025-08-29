@@ -4,7 +4,7 @@ import RedactionStudio from '../components/RedactionStudio';
 import {
   getRedactionRules, saveRedactionRules, validateJsonPath, type Rule
 } from '../services/api';
-import { useMessagePicker } from '../components/useMessagePicker';
+import { UseMessagePicker } from '../components/useMessagePicker';
 
 function isAbortError(err: unknown) { return !!err && (err as any).name === 'AbortError'; }
 
@@ -13,7 +13,7 @@ export default function RedactionStudioPage() {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [initialRules, setInitialRules] = React.useState<Rule[]>([]);
-  const { openPicker, modal } = useMessagePicker(topic);
+  const { openPicker, modal } = UseMessagePicker(topic);
 
   React.useEffect(() => {
     if (!topic) return;
@@ -32,7 +32,6 @@ export default function RedactionStudioPage() {
   return (
     <main className="min-h-dvh bg-[#0A0F1C]">
       <div className="mx-auto max-w-7xl px-4 py-4 md:px-6 text-slate-100">
-        {/* Header */}
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h1 className="text-lg font-semibold tracking-tight">Redaction Studio</h1>
@@ -58,7 +57,6 @@ export default function RedactionStudioPage() {
           </Link>
         </div>
 
-        {/* States */}
         {loading && (
           <div
             role="status"
@@ -78,7 +76,6 @@ export default function RedactionStudioPage() {
           </div>
         )}
 
-        {/* Main panel */}
         {!loading && !error && topic && (
           <div className="rounded-xl border border-white/10 bg-[#0F162B] p-4">
             <RedactionStudio
@@ -90,7 +87,6 @@ export default function RedactionStudioPage() {
           </div>
         )}
 
-        {/* Modal from the hook */}
         {modal}
       </div>
     </main>

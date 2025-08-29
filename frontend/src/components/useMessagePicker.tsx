@@ -7,7 +7,7 @@ function isAbortError(err: unknown) {
   return !!err && (err as any).name === 'AbortError';
 }
 
-export function useMessagePicker(topic: string | undefined) {
+export function UseMessagePicker(topic: string | undefined) {
   const [open, setOpen] = React.useState(false);
   const resolver = React.useRef<((v: string | undefined) => void) | null>(null);
 

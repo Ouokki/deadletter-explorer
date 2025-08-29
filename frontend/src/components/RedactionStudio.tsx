@@ -428,7 +428,7 @@ function RedactionStudio(props: RedactionStudioProps) {
                 <TextArea rows={14} value={sampleText} onChange={(e) => setSampleText(e.target.value)} />
               )}
               {tab === "pick" && (
-                <Button variant="secondary" onClick={pickMessage}>Open picker</Button>
+                <Button className="ml-2" variant="secondary" onClick={pickMessage}>Open picker</Button>
               )}
             </div>
           </div>
